@@ -1,11 +1,11 @@
 # Windows Dev Center Symbolicater
 
-This is a console application which allows you to symbolicate the stacktraces of .Net Native UWP apps in the Windows Dev Center.
+This is a console application which allows you to symbolicate the stack traces of .Net Native UWP apps in the Windows Dev Center.
 You can use it offline with a downloaded stacktrace or it can get the stacktraces automatically from the Windows Dev Center.
 
-### Usage with single .tsv stacktrace:
+### Usage with single .tsv stack trace:
 
-1. Download the .tsv stacktrace from the Dev Center
+1. Download the .tsv stack trace from the Dev Center
 2. Download the corresponding PDB from the Dev Center
 3. Use like this:
 	```
