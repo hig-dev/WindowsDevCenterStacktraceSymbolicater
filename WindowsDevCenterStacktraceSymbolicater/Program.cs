@@ -39,6 +39,7 @@ namespace WindowsDevCenterStacktraceSymbolicater
 
             try
             {
+                Console.SetIn(new StreamReader(Console.OpenStandardInput(), Console.InputEncoding,false,bufferSize: 1024));
                 if (args.Length == 0)
                 {
                     PrintUsage();
