@@ -76,6 +76,7 @@ Symbolicates multiple crashes specified in a range:
 
 
 
-### Uses code from:
+### Uses:
 
- * [StackParser](https://github.com/dotnet/corefx-tools/tree/master/src/StackParser)
+ * Uses parts of [StackParser](https://github.com/dotnet/corefx-tools/tree/master/src/StackParser) (MIT License)
+ * Uses the library [Newtonsoft.JSON](https://github.com/JamesNK/Newtonsoft.Json) (MIT License)
