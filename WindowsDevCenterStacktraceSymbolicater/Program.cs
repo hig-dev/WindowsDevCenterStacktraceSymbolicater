@@ -28,6 +28,7 @@ namespace WindowsDevCenterStacktraceSymbolicater
         private static string _appVersion = null;
         private static string _outputPath = null;
         private static string _tsvPath = null;
+        private static string _crashTxtPath = null;
         private static string _start = null;
         private static string _end = null;
         private static string _failureHash = null;
@@ -108,6 +109,10 @@ namespace WindowsDevCenterStacktraceSymbolicater
             if (!String.IsNullOrEmpty(_tsvPath))
             {
                 HandleTsvStacktrace(Path.GetFullPath(_tsvPath), DiaHelper.LoadPDB(fullPdbPath));
+            }
+            else if (!String.IsNullOrEmpty(_crashTxtPath))
+            {
+                HandleCrashTxtStacktrace(Path.GetFullPath(_crashTxtPath), DiaHelper.LoadPDB(fullPdbPath));
             }
             else if (!String.IsNullOrEmpty(_failureHash))
             {
@@ -299,6 +304,44 @@ namespace WindowsDevCenterStacktraceSymbolicater
             }
         }
 
+        private static void HandleCrashTxtStacktrace(string crashTxt, IDiaSession pdbSession)
+        {
+            var lines = File.ReadAllLines(crashTxt);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                var currentLine = lines[i];
+                if (currentLine.Contains("<BaseAddress>"))
+                {
+                    string outputLine = "";
+                    string[] splitted = currentLine.Split(new string[] { "<BaseAddress>" }, StringSplitOptions.None);
+                    outputLine += splitted[0];
+                    string rva = splitted[1].Replace("+0x", "");
+                    uint offset = HexToUint(rva);
+                    if (pdbSession != null && offset != 0)
+                    {
+                        string tmpMethodName = DiaHelper.GetMethodName(pdbSession, offset);
+                        if (!String.IsNullOrEmpty(tmpMethodName))
+                        {
+                            outputLine += tmpMethodName;
+                        }
+                        else
+                        {
+                            outputLine += "<BaseAddress>" + splitted[1];
+                        }
+                    }
+                    else
+                    {
+                        outputLine += "<BaseAddress>" + splitted[1];
+                    }
+                    _writer.WriteLine(outputLine);
+                }
+                else
+                {
+                    _writer.WriteLine(currentLine);
+                }
+            }
+        }
+
         static uint HexToUint(string hexStr)
         {
             try
@@ -346,6 +389,7 @@ namespace WindowsDevCenterStacktraceSymbolicater
             Console.WriteLine("-version <your app version> (This will symbolicate multiple crashes specific to a version)");
             Console.WriteLine("-failureHash <failureHash> (This will symbolicate one crash. You can find this in the url of a crash in the Dev Center)");
             Console.WriteLine("-tsv <path to .tsv stacktrace> (Enables OFFLINE mode: Symbolicates the downloaded stacktrace from the Dev Center)");
+            Console.WriteLine("-txt <path to .txt stacktrace> (Enables OFFLINE mode: Symbolicates the crash logs with lines like YourApp!<BaseAddress>+0xdc1aef)");
             Console.WriteLine();
             Console.WriteLine("Additional required arguments if not in OFFLINE mode: ");
             Console.WriteLine("-tenant <your Azure AD tenant id>");
@@ -370,6 +414,9 @@ namespace WindowsDevCenterStacktraceSymbolicater
             Console.WriteLine();
             Console.WriteLine("Symbolicates a single .tsv file (offline mode):");
             Console.WriteLine("-tsv stackTrace.tsv -x64 MyApp.pdb -output result.txt");
+            Console.WriteLine();
+            Console.WriteLine("Symbolicates a single .txt file (offline mode):");
+            Console.WriteLine("-txt crashLog.txt -x64 MyApp.pdb -output result.txt");
             Console.WriteLine();
             Console.WriteLine("Symbolicates one crash using failureHash:");
             Console.WriteLine("-failureCrash 1234abcd-1234-abcd-1234-1234abcd1234 -tenant abcd-1234-abcd-1234-abcdefghijkl -client abcd1234-abcd-1234-abcd-abcdefghijkl -key 123456789ABFGHRFKHHHHHHHHEEEDDSWWHHOORFRDFG= -app ABCDEDFG1234 -x64 MyApp.pdb -output result.txt");
@@ -410,6 +457,10 @@ namespace WindowsDevCenterStacktraceSymbolicater
                     else if (args[i] == "-tsv")
                     {
                         _tsvPath = args[i + 1];
+                    }
+                    else if (args[i] == "-txt")
+                    {
+                        _crashTxtPath = args[i + 1];
                     }
                     else if (args[i] == "-failureHash")
                     {
